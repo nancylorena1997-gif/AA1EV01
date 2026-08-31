@@ -12,6 +12,23 @@ servlets y los presenta con una interfaz oscura inspirada en el logo oficial.
 - Maven
 - JUnit 5 y Mockito (pruebas unitarias por módulo)
 
+## Requisitos
+
+| Recurso | Versión |
+| --- | --- |
+| JDK | 21 (debe ser JDK, no JRE) |
+| Maven | Incluido como wrapper (`mvnw.cmd` / `mvnw`) |
+| Base de datos | Ninguna instalación: SQLite se crea sola |
+
+## Inicio rápido
+
+```powershell
+.\mvnw.cmd spring-boot:run
+```
+
+Luego abre `http://localhost:8080`. La base de datos y los datos de
+demostración se crean en el primer arranque.
+
 ## Arquitectura
 
 El código se organiza por **módulos reutilizables** y, dentro de cada uno, por **capas**:
@@ -39,22 +56,58 @@ com.newpohone
         └── infrastructure  → repositorios JDBC
 ```
 
-Detalle de ambientes, versiones y cómo correr pruebas:
-[docs/ambientes-desarrollo-pruebas.md](docs/ambientes-desarrollo-pruebas.md).
+Los recursos web se distribuyen así:
 
-## Pruebas
-
-```powershell
-.\mvnw.cmd test
+```text
+src/main/resources
+├── application.properties
+├── db/                     → schema.sql y seed.sql
+├── static/                 → css, js e imágenes
+└── templates/              → auth, catalog, dashboard, inventory,
+                              modules, orders, layout, fragments
 ```
+
+## Módulos y rutas
+
+| Módulo | Ruta principal | Acceso |
+| --- | --- | --- |
+| Catálogo | `/` y `/catalog` | Público |
+| Carrito | `/cart` y API `/catalog/cart` | Público |
+| Checkout | `/checkout` | Público |
+| Seguimiento | `/seguimiento` | Público |
+| Autenticación | `/login` y `/register` | Público |
+| Favoritos | `/favoritos` | Cliente |
+| Dashboard | `/dashboard` | Administrador |
+| Pedidos | `/pedidos` | Administrador |
+| Inventario | `/inventario` | Administrador |
+| CRUD de los 16 módulos | `/modules/{clave}` | Administrador |
+
+Las rutas de administrador están protegidas por `AuthInterceptor`: un cliente que
+intente entrar es redirigido al catálogo.
 
 ## Funcionalidades
 
 - Login y registro de clientes con sesiones HTTP
 - Contraseñas protegidas con PBKDF2 (upgrade automático desde texto plano del seed)
+- Catálogo público con buscador, filtros y ordenación
+- Carrito en sesión con control de stock
+- Checkout con validación de pago, guía de seguimiento y descuento de inventario
+- Gestión de pedidos con estados, línea de tiempo y devolución de stock al cancelar
 - Dashboard con ventas, pedidos, clientes, inventario y tickets
 - CRUD completo de los 16 módulos
 - Base de datos y datos de demostración creados automáticamente
+
+## Configuración
+
+Propiedades propias en `src/main/resources/application.properties`:
+
+| Propiedad | Valor por defecto | Para qué sirve |
+| --- | --- | --- |
+| `server.port` | `8080` | Puerto HTTP |
+| `newphone.inventory.low-stock-threshold` | `30` | Umbral de alerta de stock bajo |
+| `newphone.whatsapp.phone` | `573001001001` | Número del botón de WhatsApp |
+| `newphone.contact.email` | `asesor@newphone.com` | Correo de contacto |
+| `newphone.contact.hours` | Lunes a sábado… | Horario mostrado en la tienda |
 
 ## Base de datos
 
@@ -69,6 +122,10 @@ Para usar otra ruta:
 ```text
 -Dnewphone.database=C:\ruta\personalizada\newphone.db
 ```
+
+El esquema (16 tablas) y los datos de demostración los aplica `DatabaseBootstrap`
+en cada arranque, sin perder la información existente. Para empezar de cero,
+basta con borrar el archivo `.db`.
 
 ## Acceso demo
 
@@ -88,6 +145,20 @@ http://localhost:8080/catalog
 
 Incluye buscador, filtros por categoría/precio/disponibilidad y ordenación.
 Responsive para escritorio y móvil.
+
+## Pruebas
+
+```powershell
+# Todas las pruebas
+.\mvnw.cmd test
+
+# Un módulo puntual
+.\mvnw.cmd "-Dtest=CartServiceTest,CartTest" test
+```
+
+Hay **45 pruebas** en 21 clases: unitarias con JUnit 5 y Mockito para cada
+módulo, más una de integración que verifica el arranque del contexto de Spring.
+Los informes quedan en `target/surefire-reports/`.
 
 ## Ejecución en IntelliJ IDEA
 
@@ -120,7 +191,27 @@ http://localhost:8080
 java -jar target\proyecto-ga-722501096-1.0.0.jar
 ```
 
+`clean package` ejecuta las pruebas antes de generar el JAR.
+
+## Solución de problemas
+
+| Síntoma | Causa y solución |
+| --- | --- |
+| `No compiler is provided in this environment` | `JAVA_HOME` apunta a un JRE. Hazlo apuntar a un JDK 21. |
+| El puerto 8080 está ocupado | Arranca con `--server.port=8081`. |
+| Quieres reiniciar los datos | Borra `%USERPROFILE%\.newphone\newphone-spring.db` y vuelve a arrancar. |
+
+## Documentación
+
+| Documento | Contenido |
+| --- | --- |
+| [Módulos integrados](docs/GA8-220501096-AA1-EV02-modulos-integrados.md) | Documentación por módulo y componente con datos de entrada y salida, informe de pruebas y configuración de servidores y base de datos |
+| [Ambientes de desarrollo y pruebas](docs/ambientes-desarrollo-pruebas.md) | Requisitos, configuración de cada ambiente y cómo ejecutar pruebas |
+
 ## Capturas de pantalla
+
+<details>
+<summary>Ver las 16 capturas</summary>
 
 ### Catálogo público
 
@@ -185,3 +276,5 @@ java -jar target\proyecto-ga-722501096-1.0.0.jar
 ### Módulo Detalle de pedidos
 
 ![Detalle de pedidos](docs/Newphone-16.jpeg)
+
+</details>
