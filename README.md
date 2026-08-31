@@ -127,6 +127,36 @@ El esquema (16 tablas) y los datos de demostración los aplica `DatabaseBootstra
 en cada arranque, sin perder la información existente. Para empezar de cero,
 basta con borrar el archivo `.db`.
 
+### Modelo relacional
+
+![Modelo relacional de la base de datos](docs/modelo-relacional.png)
+
+### Tablas
+
+| Grupo | Tablas |
+| --- | --- |
+| Usuarios | `cuenta`, `cliente`, `administrador` |
+| Catálogo | `categoria`, `producto`, `resena` |
+| Compras | `carrito`, `detalle_carrito`, `producto_favorito` |
+| Pedidos | `pedido`, `detalle_pedido`, `envio`, `factura`, `pagos` |
+| Atención | `atencion_cliente` |
+| Reportes | `reportes_venta` |
+
+`cuenta` guarda las credenciales y se enlaza con `cliente` o `administrador`,
+que es lo que define el rol del usuario al iniciar sesión.
+
+### Reglas de integridad
+
+- Claves foráneas activas (`PRAGMA foreign_keys = ON`).
+- Correo de la cuenta y teléfono de cliente y administrador irrepetibles.
+- Guía de envío única, usada para el seguimiento del pedido.
+- Una sola reseña y un solo favorito por cliente y producto.
+- `CHECK` sobre precios, stock, cantidades y totales para impedir valores negativos,
+  y calificación de reseñas entre 1 y 5.
+
+El script está en `src/main/resources/db/schema.sql` y los datos de demostración
+en `db/seed.sql`.
+
 ## Acceso demo
 
 ```text
